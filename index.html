@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Codeword Letter Mapper</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js"></script>
+	
+	<style type="text/css">
+		.clueNumber {
+			color: black;
+			font-size: 8pt;
+			position: relative;
+			top: -10px;
+			font-weight: bold;
+		}
+		
+		.letterButton {
+			height: 40px;
+			width: 40px;
+		}
+		
+		.highlightCell {
+			background-color : blue;
+			color: blue;
+		}
+		
+		.cellContent {
+			width: 40px;
+			height: 40px;
+			font-family: monospace;
+		}
+		
+		.cellContentHidden {
+			color: #fff;
+			
+		}
+		.cellContentShown {
+			color: #000;
+			
+		}
+	</style>
+	
+	<script type="text/javascript">
+		function AppViewModel() {
+			var self = this;
+			self.assignedLetters = ko.observableArray([]);
+			self.selectedIndex = ko.observable();
+			self.assignments = ko.observableArray(
+			[
+				
+			]
+			);
+			
+			self.selectIndex = function(index) {
+				self.selectedIndex( index );
+			};
+			
+			self.isAvailable = function ( letter ) {
+				return self.assignedLetters.indexOf( letter ) == -1;
+			};
+			
+			self.selectLetter = function( letter ) {
+				if ( self.selectedIndex() ) {
+					console.log("Here");
+					$('#cell_content_' + self.selectedIndex() ).text(letter);
+					$('#cell_content_' + self.selectedIndex() ).removeClass('cellContentHidden');
+					$('#cell_content_' + self.selectedIndex() ).addClass('cellContentShown');
+					self.selectedIndex();
+					self.assignedLetters.push(letter);
+				}
+			};
+		}
+		
+		theModel = new AppViewModel();
+	
+		
+		function buildLetterSelector() {
+			console.log("Building letter selector");			
+			var alphabet = "abcdefghijklmnopqrstuvwxyz".toUpperCase();
+			var alphabetAsArray = alphabet.split('');
+			alphabetAsArray.forEach( addLetterSelector );
+		}
+		
+		function addLetterSelector(item, index, arr) {
+			var colElt = $('<td></td>');
+			var button = $('<button data-bind=\"enable: isAvailable(\'' + item + '\')\" type=\"button\"></button>');
+			button.text( item );
+			button.addClass('letterButton');
+			button.bind('click', { letter : item }, selectLetter);
+			colElt.append(button);
+			$('#letter-selector').append(colElt);
+		}
+		
+		function selectLetter(event) {
+			console.log('Selected ' + event.data.letter);
+			theModel.selectLetter(event.data.letter);
+		}
+		
+		function buildLetterMapperTable( bodyId ) {
+			console.log("Building table");
+			for( i = 1; i <= 2; i++ ) {
+				var rowElt = $('<tr></tr>');
+				for( j = 1; j <= 13; j++ ) {
+					var indexValue = (i-1) * 13 + j;
+					var colElt = $('<td class="border border-primary" data-bind="css: {highlightCell : selectedIndex() == ' + indexValue + ' }"></td>');
+					var indexHolder = $('<span></span>');
+					//var contentHolder = $('<span data-bind="style : {color : selectedIndex() == ' + indexValue + ' ? \'blue\' : \'#fff\' }"></span>');					
+					var contentHolder = $('<span></span>');					
+					contentHolder.prop( 'id', 'cell_content_' + indexValue );
+					contentHolder.text('X');
+					contentHolder.addClass('cellContent');
+					contentHolder.addClass('cellContentHidden');
+					indexHolder.text( (i-1) * 13 + j );
+					indexHolder.addClass('clueNumber');
+					colElt.prop( 'id', 'cell_' + indexValue );
+					colElt.append(indexHolder);
+					colElt.append(contentHolder);
+					colElt.bind('click', { index : (i-1) * 13 + j }, selectingIndex);
+					rowElt.append(colElt);
+				}
+				$('#' + bodyId).append(rowElt);
+			}
+		}
+		
+		function selectingIndex( event ) {
+			console.log('Selecting index ' + event.data.index);
+			theModel.selectIndex(event.data.index);
+		}
+		
+		$(document).ready(
+			function() {
+				console.log("Here we are");
+				buildLetterSelector();
+				buildLetterMapperTable( 'mapper-table-body' );
+				ko.applyBindings(theModel);
+				console.log("Ready");
+			}
+		);
+	</script>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<table class="table">
+					<tbody>
+						<tr id="letter-selector"></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<table class="table table-bordered">
+			<tbody id="mapper-table-body">
+			</tbody>
+		</table>
+	</div>
+	<div class="container">
+		<div class="row">
+			<div data-bind="text: 'Assigned ' + assignedLetters().length + ' letters'" class="col-6">
+			</div>
+		</div>
+	</div>
+</body>
+</html>	
