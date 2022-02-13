@@ -68,6 +68,28 @@
 			position: relative;
 			top: -13px;
 		}
+		.cellContentHolder {
+			font-size: 14pt;
+			font-family: monospace;
+			font-weight: bold;
+			text-align: center;
+			padding: 5px;
+		}
+		.oneletter {
+		  width: 30px;
+		  /*float: left;*/
+		  margin: 0 5px 0 0;
+		  text-align: center;
+		  text-transform: uppercase;
+		  padding: 4px 7px;
+		  border: 1px solid;
+		  border-radius: 3px;
+		  font-size: 14px;
+		  font-family: 'Open Sans',sans-serif;
+		}
+		.inputLabel {
+			font-weight: bold;
+		}		
 	</style>
 	
 	<script type="text/javascript">
@@ -88,7 +110,7 @@
 				var rowElement = $('<tr></tr>');
 				for( j = 1; j <= dimension; j++ ) {
 					var columnElement = $('<td></td>');
-					var cellId = 'cell_' + i + '_' + j;
+					var cellId = 'cell_' + i + '_' + j;										
 					columnElement.prop( 'id', cellId );
 					columnElement.addClass('gridCell gridCellEmpty pointable');
 					columnElement.bind('click', {row : i, column : j}, toggleCell);
@@ -168,10 +190,14 @@
 							// increment clue counter
 							clueCounter++;
 							var clueNumberHolder = $('<span></span>');
+							//var cellContentHolder = $('<span></span>');
+							//cellContentHolder.addClass('cellContentHolder');
+							//cellContentHolder.prop('id', 'cell_content_' + i + '_' + j);
 							clueNumberHolder.prop('id', 'clue_' + clueCounter);
 							clueNumberHolder.text(clueCounter);
 							clueNumberHolder.addClass('clueNumberHolder');
-							cellObj.append(clueNumberHolder);
+							cellObj.prepend(clueNumberHolder);
+							//cellObj.append(cellContentHolder);
 							
 							// is this an across or down clue? or both?
 							var clueArray = [];
@@ -182,7 +208,7 @@
 								}
 								if ( hOffset> 1 ) {
 									console.log('Across clue - number of letters: ' + hOffset);
-									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "across", numberOfLetters : hOffset, value : ko.observable(null) } );
+									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "across", numberOfLetters : hOffset, value : ko.observable(null), editBuffer : ko.observableArray(Array(hOffset).fill('')) } );
 								}								
 							}
 							
@@ -193,7 +219,7 @@
 								}
 								if ( vOffset > 1 ) {
 									console.log('Down clue - number of letters: ' + vOffset);
-									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "down", numberOfLetters : vOffset, value : ko.observable(null) } );
+									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "down", numberOfLetters : vOffset, value : ko.observable(null), editBuffer : ko.observableArray(Array(vOffset).fill('')) } );
 								}								
 							}
 							// add clues to model
@@ -270,26 +296,10 @@
 			<!-- /ko -->
 			<!-- ko if: mode() == MODE_INITIALISE_GRID -->
 				<h2>Initialise Grid</h2>
-				<div class="form-check form-check-inline" style="font-weight: bold">
-				Puzzle Type
-				</div>
-				
-				<div class="form-check form-check-inline">
-				  <input class="form-check-input" type="radio" name="puzzleType" id="inlineRadio1" data-bind="checked : puzzleType" value="crossword" />
-				  <label class="form-check-label" for="inlineRadio1">Crossword</label>
-				</div>
-
-				<div class="form-check form-check-inline">
-				  <input class="form-check-input" type="radio" name="puzzleType" id="inlineRadio2" data-bind="checked : puzzleType" value="codeword" />
-				  <label class="form-check-label" for="inlineRadio2">Codeword</label>
-				</div>
-
-                <br/>
-				
 				<div data-bind="if : puzzleType() == PUZZLE_TYPE_CROSSWORD">
 					<button class="btn btn-primary" type="button" data-bind="click: enumerateCells">Number Cells</button>
 				</div>
-				
+				<!--
 				<div data-bind="if : puzzleType() == PUZZLE_TYPE_CODEWORD">
 					<div class="form-group">
 					    <label for="exampleFormControlTextarea2">Input array of numbers in JSON format</label>
@@ -298,15 +308,19 @@
 						<button class="btn btn-primary" type="button" data-bind="click: enumerateCells">Number Cells</button>
 					</div>
 				</div>
+				-->
 			<!-- /ko -->
 			<!-- ko if: mode() == MODE_SOLVE -->
 				<h3>Input Palette</h3>
 				<div class="row" data-bind="if: selectedIndex">
-					<div class="col-6">
-						<span data-bind="text: 'Clue(s) ' + clues()[selectedIndex()-1].length"></span>
+					<div class="col-12">
+						<!-- <span data-bind="text: 'Clue(s) ' + clues()[selectedIndex()-1].length"></span> -->
 						<div class="class="form-group" data-bind="foreach: clues()[selectedIndex()-1]">
-							<label data-bind="attr : { for : 'clue-' + id + '-' + $index }, text: sense + ' ' + numberOfLetters + ' letters'"></label>
-							<input data-bind="attr : { id : 'clue-' + id + '-' + $index, type : 'text', size : '10' }"/>
+							<span class="inputLabel" data-bind="attr : {}, text: (id) + ' ' + sense.toUpperCase() + ' (' + numberOfLetters + ' letters)'"></span>
+							<!--<div data-bind="foreach: new Array(numberOfLetters)" class="input-letters">-->
+							<div data-bind="foreach: editBuffer" class="input-letters">
+								<input class="oneletter" data-bind="attr : {maxlength : 1, size : 1, type : 'text', name : 'edit_buffer[' + $index() + ']'}, value : $data" />
+							</div>
 						</div>
 					</div>
 				</div>
@@ -333,11 +347,48 @@
 			
 			self.moveToMode = function( mode ) {
 				self.mode( mode );
-			}
+			};
 			
 			self.pushClueArray = function( clueArray ) {
 				self.clues().push(clueArray);
-			}
+			};
+			
+			self.initialiseEditBuffer = function( clueIndex ) {
+				console.log('initialiseEditBuffer(' + clueIndex + ')');
+				var clueList = self.clues()[clueIndex - 1]; // need to subtract 1 due to zero-indexing
+				console.log('Number of clues: ' + clueList.length);	
+				if ( clueList.length == 2 ) {
+					// then there is a shared letter in across and down
+					// across
+					for( var i = 0; i < clueList[0].numberOfLetters; i++ ) {
+						var cellChar = self.getLetterCellContent( clueList[0].xcoord, clueList[0].ycoord + i );
+						clueList[0].editBuffer()[i] = ko.observable(cellChar);
+					}
+					// down
+					for( var i = 0; i < clueList[1].numberOfLetters; i++ ) {
+						var cellChar = self.getLetterCellContent( clueList[1].xcoord + i, clueList[1].ycoord );
+						clueList[1].editBuffer()[i] = ko.observable(cellChar);
+					}
+				} else {
+					// only one sense to cater for
+					for( var i = 0; i < clueList[0].numberOfLetters; i++ ) {
+						var cellChar = '';
+						if ( clueList[0].sense.toUpperCase() == 'ACROSS' ) {
+							cellChar = self.getLetterCellContent( clueList[0].xcoord, clueList[0].ycoord + i );
+						} else {
+							cellChar = self.getLetterCellContent( clueList[0].xcoord + i, clueList[0].ycoord );
+						}						
+						clueList[0].editBuffer()[i] = ko.observable(cellChar);
+					}
+				}
+				
+			};
+			
+			self.getLetterCellContent = function( xcoord, ycoord ) {
+				var cellContentId = '#cell_content_' + xcoord + '_' + ycoord;
+				var textContentFromGrid = $(cellContentId ).text();
+				return textContentFromGrid;
+			};
 			
 			self.enumerateCells = function( event ) {
 				console.log('Number the cells');
@@ -349,9 +400,21 @@
 				self.numberOfEmptyCells( (dimension*dimension) - $('.gridCellFilled').length );
 				$('.gridCell').unbind('click');
 				$('.gridCell').removeClass('pointable');
+				// console.log( $('#grid-body').find('td').filter( ':not(.gridCellFilled)' ).length + ' empty cells' );
+				$('#grid-body').find('td').filter( ':not(.gridCellFilled)' ).each( 
+					function( index ) {
+						var tdId = $(this).prop('id');
+						var coords = tdId.substring(5).split('_');
+						var cellContentHolder = $('<span></span>');
+						cellContentHolder.addClass('cellContentHolder');
+						cellContentHolder.prop('id', 'cell_content_' + coords[0] + '_' + coords[1]);
+						$(this).append(cellContentHolder);
+					}
+				);
 			};
 			
-			self.selectIndex = function(index) {
+			self.selectIndex = function(index) {				
+				self.initialiseEditBuffer( index );
 				self.selectedIndex( index );
 			};
 			
