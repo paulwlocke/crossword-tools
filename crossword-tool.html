@@ -74,6 +74,7 @@
 			font-weight: bold;
 			text-align: center;
 			padding: 5px;
+			text-transform: uppercase;
 		}
 		.oneletter {
 		  width: 30px;
@@ -89,7 +90,13 @@
 		}
 		.inputLabel {
 			font-weight: bold;
-		}		
+		}
+		.mt-5 {
+			margin-top: 5px;
+		}
+		.px-5 {
+			padding: 5px;
+		}
 	</style>
 	
 	<script type="text/javascript">
@@ -208,7 +215,7 @@
 								}
 								if ( hOffset> 1 ) {
 									console.log('Across clue - number of letters: ' + hOffset);
-									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "across", numberOfLetters : hOffset, value : ko.observable(null), editBuffer : ko.observableArray(Array(hOffset).fill('')) } );
+									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "across", numberOfLetters : hOffset, value : ko.observable(null), editBuffer : Array(hOffset) } );
 								}								
 							}
 							
@@ -219,7 +226,7 @@
 								}
 								if ( vOffset > 1 ) {
 									console.log('Down clue - number of letters: ' + vOffset);
-									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "down", numberOfLetters : vOffset, value : ko.observable(null), editBuffer : ko.observableArray(Array(vOffset).fill('')) } );
+									clueArray.push( { id : clueCounter, xcoord : i, ycoord : j, sense : "down", numberOfLetters : vOffset, value : ko.observable(null), editBuffer : Array(vOffset) } );
 								}								
 							}
 							// add clues to model
@@ -299,33 +306,29 @@
 				<div data-bind="if : puzzleType() == PUZZLE_TYPE_CROSSWORD">
 					<button class="btn btn-primary" type="button" data-bind="click: enumerateCells">Number Cells</button>
 				</div>
-				<!--
-				<div data-bind="if : puzzleType() == PUZZLE_TYPE_CODEWORD">
-					<div class="form-group">
-					    <label for="exampleFormControlTextarea2">Input array of numbers in JSON format</label>
-						<textarea class="form-control rounded-0" id="exampleFormControlTextarea2" rows="5"></textarea>
-						<br/>
-						<button class="btn btn-primary" type="button" data-bind="click: enumerateCells">Number Cells</button>
-					</div>
-				</div>
-				-->
-			<!-- /ko -->
-			<!-- ko if: mode() == MODE_SOLVE -->
-				<h3>Input Palette</h3>
-				<div class="row" data-bind="if: selectedIndex">
-					<div class="col-12">
-						<!-- <span data-bind="text: 'Clue(s) ' + clues()[selectedIndex()-1].length"></span> -->
-						<div class="class="form-group" data-bind="foreach: clues()[selectedIndex()-1]">
-							<span class="inputLabel" data-bind="attr : {}, text: (id) + ' ' + sense.toUpperCase() + ' (' + numberOfLetters + ' letters)'"></span>
-							<!--<div data-bind="foreach: new Array(numberOfLetters)" class="input-letters">-->
-							<div data-bind="foreach: editBuffer" class="input-letters">
-								<input class="oneletter" data-bind="attr : {maxlength : 1, size : 1, type : 'text', name : 'edit_buffer[' + $index() + ']'}, value : $data" />
-							</div>
-						</div>
-					</div>
-				</div>
 			<!-- /ko -->
 			</div>
+			
+			<!-- ko if: mode() == MODE_SOLVE -->
+			<div class="col-12">
+				<div class="border rounded mt-5 px-5" data-bind="if: selectedIndex">
+				<h3>Input Palette</h3>
+					<div>					
+							<!-- <span data-bind="text: 'Clue(s) ' + clues()[selectedIndex()-1].length"></span> -->
+							<div class="class="form-group" data-bind="foreach: clues()[selectedIndex()-1]">
+								<span class="inputLabel" data-bind="attr : {}, text: (id) + ' ' + sense.toUpperCase() + ' (' + numberOfLetters + ' letters)'"></span>
+								<!--<div data-bind="foreach: new Array(numberOfLetters)" class="input-letters">-->
+								<div data-bind="foreach: editBuffer" class="input-letters">
+									<input class="oneletter" data-bind="attr : {minlength : 1, maxlength : 1, size : 1, type : 'text', name : 'edit_buffer[' + $index() + ']'}, textInput : $parent.editBuffer[$index()]" />
+								</div>
+							</div>
+							<div style="margin-top: 10px;">
+								<button class="btn btn-primary" data-bind="enable: true, click: updateGrid">Confirm</button>
+							</div>
+					</div>
+				</div>
+			</div>
+			<!-- /ko -->			
 		</div>
 	</div>
 
@@ -362,12 +365,12 @@
 					// across
 					for( var i = 0; i < clueList[0].numberOfLetters; i++ ) {
 						var cellChar = self.getLetterCellContent( clueList[0].xcoord, clueList[0].ycoord + i );
-						clueList[0].editBuffer()[i] = ko.observable(cellChar);
+						clueList[0].editBuffer[i] = ko.observable(cellChar);
 					}
 					// down
 					for( var i = 0; i < clueList[1].numberOfLetters; i++ ) {
 						var cellChar = self.getLetterCellContent( clueList[1].xcoord + i, clueList[1].ycoord );
-						clueList[1].editBuffer()[i] = ko.observable(cellChar);
+						clueList[1].editBuffer[i] = ko.observable(cellChar);
 					}
 				} else {
 					// only one sense to cater for
@@ -378,11 +381,26 @@
 						} else {
 							cellChar = self.getLetterCellContent( clueList[0].xcoord + i, clueList[0].ycoord );
 						}						
-						clueList[0].editBuffer()[i] = ko.observable(cellChar);
+						clueList[0].editBuffer[i] = ko.observable(cellChar);
 					}
 				}
 				
 			};
+			
+			self.updateGrid = function( event ) {
+				console.log( 'updateGrid' );
+				console.log( 'Clue: ' + self.selectedIndex() );
+				self.clues()[ self.selectedIndex() - 1 ].forEach( (clue, index) => self.processEditBuffer(clue) );
+			}
+			
+			self.processEditBuffer = function( clue ) {
+				console.log('Edit buffer length: ' + clue.editBuffer.length);
+				if ( clue.sense.toUpperCase() == 'ACROSS' ) {
+					clue.editBuffer.forEach( (l, index) => { $('#cell_content_' + clue.xcoord + '_' + (clue.ycoord + index) ).text(l()); /*console.log('Letter: ' + JSON.stringify(l()))*/ } );
+				} else {
+					clue.editBuffer.forEach( (l, index) => { $('#cell_content_' + (clue.xcoord + index) + '_' + clue.ycoord ).text(l());  /* console.log('Letter: ' + JSON.stringify(l())) */} );
+				}				
+			}
 			
 			self.getLetterCellContent = function( xcoord, ycoord ) {
 				var cellContentId = '#cell_content_' + xcoord + '_' + ycoord;
@@ -414,6 +432,7 @@
 			};
 			
 			self.selectIndex = function(index) {				
+			
 				self.initialiseEditBuffer( index );
 				self.selectedIndex( index );
 			};
