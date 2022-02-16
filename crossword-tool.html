@@ -100,6 +100,7 @@
 	</style>
 	
 	<script type="text/javascript">
+		var MODE_SET_DIMENSION = 0;
 		var MODE_CREATE_GRID = 1;
 		var MODE_INITIALISE_GRID = 2;
 		var MODE_SOLVE = 3;
@@ -276,9 +277,6 @@
 		$(document).ready(
 			function() {
 				console.log("Here we are");
-				buildGrid('grid-body');
-				//buildLetterSelector();
-				//buildLetterMapperTable( 'mapper-table-body' );
 				ko.applyBindings(theModel);
 				console.log("Ready");
 			}
@@ -298,6 +296,15 @@
 		</div>
 		<div class="row form-group" style="">
 			<div class="col-6">
+			<!-- ko if: mode() == MODE_SET_DIMENSION -->
+				<h2>Please confirim dimension of grid</h2>
+				<div>
+					<div><input type="radio" value="11" name="availableDimensions" data-bind="checked: dimension" />11 x 11</div>
+					<div><input type="radio" value="13" name="availableDimensions" data-bind="checked: dimension" />13 x 13</div>
+					<div><input type="radio" value="15" name="availableDimensions" data-bind="checked: dimension" />15 x 15</div>
+					<button class="btn btn-primary" type="button" data-bind="click: confirmDimension">Confirm Dimension</button>
+				</div>
+			<!-- /ko -->
 			<!-- ko if: mode() == MODE_CREATE_GRID -->
 				<button class="btn btn-primary" type="button" data-bind="click: gridSetupComplete">Grid Complete</button>							
 			<!-- /ko -->
@@ -336,7 +343,8 @@
 <script type="text/javascript">
 		function AppViewModel() {
 			var self = this;
-			self.mode = ko.observable(MODE_CREATE_GRID);
+			self.dimension = ko.observable("15");
+			self.mode = ko.observable(MODE_SET_DIMENSION);
 			self.puzzleType = ko.observable(PUZZLE_TYPE_CROSSWORD);
 			self.numberOfEmptyCells = ko.observable(dimension*dimension);
 			self.assignedLetters = ko.observableArray([]);
@@ -347,6 +355,12 @@
 				
 			]
 			);
+			
+			self.confirmDimension = function() {
+				dimension = parseInt(self.dimension());
+				buildGrid('grid-body');
+				self.mode(MODE_CREATE_GRID);
+			}
 			
 			self.moveToMode = function( mode ) {
 				self.mode( mode );
@@ -414,7 +428,6 @@
 			};
 			
 			self.gridSetupComplete = function(event) {
-				self.mode(MODE_INITIALISE_GRID);
 				self.numberOfEmptyCells( (dimension*dimension) - $('.gridCellFilled').length );
 				$('.gridCell').unbind('click');
 				$('.gridCell').removeClass('pointable');
@@ -429,6 +442,8 @@
 						$(this).append(cellContentHolder);
 					}
 				);
+				setClueNumbersForCrossword();
+				self.mode(MODE_SOLVE);
 			};
 			
 			self.selectIndex = function(index) {				
