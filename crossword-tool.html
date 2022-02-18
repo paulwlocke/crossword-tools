@@ -109,14 +109,15 @@
 		var PUZZLE_TYPE_CODEWORD = "codeword";
 		
 		
-		var dimension = 15;
+		var dimension = {};
 		
 		
 		function buildGrid( gridRootId ) {
-			for( i = 1; i <= dimension; i++ ) {
+			//console.log("Building grid of dimension: " + JSON.stringify(dimension))
+			for( i = 1; i <= dimension.rows; i++ ) {
 				// build row
 				var rowElement = $('<tr></tr>');
-				for( j = 1; j <= dimension; j++ ) {
+				for( j = 1; j <= dimension.columns; j++ ) {
 					var columnElement = $('<td></td>');
 					var cellId = 'cell_' + i + '_' + j;										
 					columnElement.prop( 'id', cellId );
@@ -131,10 +132,10 @@
 		function toggleCell( event ) {
 			//console.log("Clicking cell(" + event.data.row + ", " + event.data.column + ")");
 			cellId = 'cell_' + event.data.row + '_' + event.data.column;
-			if ( (event.data.row == (dimension + 1) / 2) && (event.data.column == (dimension + 1) / 2) ) {
+			if ( (event.data.row == (dimension.rows + 1) / 2) && (event.data.column == (dimension.columns + 1) / 2) ) {
 				$('#' + cellId).toggleClass('gridCellFilled');
 			} else {
-				twinCellId = 'cell_' + (dimension - event.data.row + 1) + '_' + ((dimension - event.data.column + 1));
+				twinCellId = 'cell_' + (dimension.rows - event.data.row + 1) + '_' + ((dimension.columns - event.data.column + 1));
 				//console.log('Twin cell is: ' + twinCellId);
 				$('#' + cellId).toggleClass('gridCellFilled');
 				$('#' + twinCellId).toggleClass('gridCellFilled');
@@ -169,7 +170,7 @@
 		}
 		
 		function isBoundedBelow( r, c ) {
-			return ( r == dimension ) || ( $('#cell_' + (r+1) + '_' + c ).hasClass('gridCellFilled') );
+			return ( r == dimension.rows ) || ( $('#cell_' + (r+1) + '_' + c ).hasClass('gridCellFilled') );
 		}
 
 		function isBoundedLeft( r, c ) {
@@ -177,15 +178,15 @@
 		}
 		
 		function isBoundedRight( r, c ) {
-			return ( c == dimension ) || ( $('#cell_' + r + '_' + (c+1) ).hasClass('gridCellFilled') );
+			return ( c == dimension.columns ) || ( $('#cell_' + r + '_' + (c+1) ).hasClass('gridCellFilled') );
 		}
 		
 		
 		function setClueNumbersForCrossword() {
 			console.log('setClueNumbersForCrossword');
 			var clueCounter = 0;
-			for( var i = 1; i <= dimension; i++ ) {
-				for( var j = 1; j <= dimension; j++ ) {
+			for( var i = 1; i <= dimension.rows; i++ ) {
+				for( var j = 1; j <= dimension.columns; j++ ) {
 					var cellId = 'cell_' + i + '_' + j;
 					//console.log('Looking at cell ' + cellId);
 					var cellObj = $('#' + cellId);
@@ -211,7 +212,7 @@
 							var clueArray = [];
 							if (isBoundedLeft(i,j)) {
 								var hOffset = 1;
-								while ( (j + hOffset <= dimension) && !$('#cell_' + i + '_' + (j + hOffset)).hasClass('gridCellFilled') ) {
+								while ( (j + hOffset <= dimension.columns) && !$('#cell_' + i + '_' + (j + hOffset)).hasClass('gridCellFilled') ) {
 									hOffset++;
 								}
 								if ( hOffset> 1 ) {
@@ -222,7 +223,7 @@
 							
 							if (isBoundedAbove(i,j)) {
 								var vOffset = 1;
-								while ( (i + vOffset <= dimension) && !$('#cell_' + (i + vOffset) + '_' + j).hasClass('gridCellFilled') ) {
+								while ( (i + vOffset <= dimension.rows) && !$('#cell_' + (i + vOffset) + '_' + j).hasClass('gridCellFilled') ) {
 									vOffset++;
 								}
 								if ( vOffset > 1 ) {
@@ -298,10 +299,12 @@
 			<div class="col-6">
 			<!-- ko if: mode() == MODE_SET_DIMENSION -->
 				<h2>Please confirm dimension of grid</h2>
+				<div data-bind="foreach: dimensions">
+					<div>
+						<input type="radio" name="availableDimensions1" data-bind="checkedValue: $data, checked: $parent.selectedDimension" /><span style="margin-left: 10px" data-bind="text: rows + ' x ' + columns"></span>
+					</div>
+				</div>
 				<div>
-					<div><input type="radio" value="11" name="availableDimensions" data-bind="checked: dimension" />11 x 11</div>
-					<div><input type="radio" value="13" name="availableDimensions" data-bind="checked: dimension" />13 x 13</div>
-					<div><input type="radio" value="15" name="availableDimensions" data-bind="checked: dimension" />15 x 15</div>
 					<button class="btn btn-primary" type="button" data-bind="click: confirmDimension">Confirm Dimension</button>
 				</div>
 			<!-- /ko -->
@@ -343,7 +346,8 @@
 <script type="text/javascript">
 		function AppViewModel() {
 			var self = this;
-			self.dimension = ko.observable("15");
+			self.dimensions = [ { rows : 11, columns : 11 }, { rows : 13, columns : 13 }, { rows : 15, columns : 13 }, { rows : 15, columns : 15 } ];
+			self.selectedDimension = ko.observable( self.dimensions[3] );
 			self.mode = ko.observable(MODE_SET_DIMENSION);
 			self.puzzleType = ko.observable(PUZZLE_TYPE_CROSSWORD);
 			self.numberOfEmptyCells = ko.observable(dimension*dimension);
@@ -357,7 +361,7 @@
 			);
 			
 			self.confirmDimension = function() {
-				dimension = parseInt(self.dimension());
+				dimension = self.selectedDimension();
 				buildGrid('grid-body');
 				self.mode(MODE_CREATE_GRID);
 			}
