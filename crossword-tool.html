@@ -246,6 +246,7 @@
 		function enterAnswer( event ) {
 			console.log('Clue ' + event.data.clueindex + ' at position ' + event.data.xcoord + ',' + event.data.ycoord);
 			theModel.selectIndex(event.data.clueindex);
+			$('input.oneletter[type="text"]')[0].focus();
 		}
 		
 		function buildLetterMapperTable( bodyId ) {
@@ -322,7 +323,7 @@
 			<!-- ko if: mode() == MODE_SOLVE -->
 			<div class="col-12">
 				<div class="border rounded mt-5 px-5" data-bind="if: selectedIndex">
-				<h3>Input Palette</h3>
+				<h3>Input Panel</h3>
 					<div>					
 							<!-- <span data-bind="text: 'Clue(s) ' + clues()[selectedIndex()-1].length"></span> -->
 							<div class="class="form-group" data-bind="foreach: clues()[selectedIndex()-1]">
