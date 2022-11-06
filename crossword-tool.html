@@ -49,6 +49,23 @@
 			cursor: pointer;
 		}
 		
+		td {
+			height: 40px;
+			padding: 0px;
+		}
+		
+		.my-table {
+            border-collapse:collapse;
+            border-spacing:0 2px;
+        }
+		
+		#grid-body {
+			border-style: solid;
+			background-color: #c0c0c0;
+		}
+		
+		
+		
 		.gridCell {
 			width: 40px;
 			height: 40px;
@@ -65,8 +82,8 @@
 		.clueNumberHolder {
 			font-size: 7pt;
 			color: #000;
-			position: relative;
-			top: -13px;
+			position: absolute;
+			top: 2pxpx;
 		}
 		.cellContentHolder {
 			font-size: 14pt;
@@ -75,6 +92,9 @@
 			text-align: center;
 			padding: 5px;
 			text-transform: uppercase;
+			position: relative;
+			bottom: -3px;
+			left: 5px;
 		}
 		.oneletter {
 		  width: 30px;
@@ -119,10 +139,12 @@
 				var rowElement = $('<tr></tr>');
 				for( j = 1; j <= dimension.columns; j++ ) {
 					var columnElement = $('<td></td>');
+					var gridDiv = $('<div></div>');
 					var cellId = 'cell_' + i + '_' + j;										
-					columnElement.prop( 'id', cellId );
-					columnElement.addClass('gridCell gridCellEmpty pointable');
-					columnElement.bind('click', {row : i, column : j}, toggleCell);
+					gridDiv.prop( 'id', cellId );
+					gridDiv.addClass('gridCell gridCellEmpty pointable');
+					gridDiv.bind('click', {row : i, column : j}, toggleCell);
+					columnElement.append( gridDiv );
 					rowElement.append(columnElement);
 				}
 				$('#' + gridRootId).append(rowElement);
@@ -290,7 +312,7 @@
 		<div class="row form-group">
 			<div class="col-12">
 				<!--<table class="table table-bordered">-->
-				<table>
+				<table class="my-table">
 					<tbody id="grid-body">
 					</tbody>
 				</table>
@@ -437,7 +459,7 @@
 				$('.gridCell').unbind('click');
 				$('.gridCell').removeClass('pointable');
 				// console.log( $('#grid-body').find('td').filter( ':not(.gridCellFilled)' ).length + ' empty cells' );
-				$('#grid-body').find('td').filter( ':not(.gridCellFilled)' ).each( 
+				$('#grid-body').find('td div').filter( ':not(.gridCellFilled)' ).each( 
 					function( index ) {
 						var tdId = $(this).prop('id');
 						var coords = tdId.substring(5).split('_');
